@@ -1,0 +1,18 @@
+torch
+torchvision
+timm
+numpy
+opencv-python
+matplotlib
+scikit-learn
+pandas
+tqdm
+albumentations
+facenet-pytorch         # for face detection (MTCNN) / alignment
+onnx
+onnxruntime
+onnxruntime-gpu         # optional, for GPU support
+pyyaml
+tensorboard
+pillow
+insightface             # optional, for RetinaFace/ArcFace
