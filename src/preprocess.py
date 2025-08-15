@@ -12,15 +12,17 @@ import pandas as pd
 
 def extract_frames(video_path, out_dir, step=3):
     out_dir.mkdir(parents=True, exist_ok=True)
+    # add -nostdin to prevent ffmpeg from waiting for input
     cmd = [
-        "ffmpeg", "-hide_banner", "-loglevel", "error",
+        "ffmpeg", "-nostdin", "-y", "-hide_banner", "-loglevel", "error",
         "-i", str(video_path),
         "-vf", f"select=not(mod(n\\,{step}))",
         "-vsync", "vfr",
         "-q:v", "2",
         str(out_dir / "frame_%06d.jpg")
     ]
-    subprocess.run(cmd, check=True)
+    # prevent ffmpeg from reading from the controlling terminal by closing stdin.
+    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL)
 
 def detect_and_save_crops(frames_dir, crops_dir, mtcnn, min_face_size=40, size=160):
     frames = sorted(frames_dir.glob("*.jpg"))
