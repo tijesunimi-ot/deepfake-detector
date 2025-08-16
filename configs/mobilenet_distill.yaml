@@ -1,0 +1,32 @@
+# configs/mobilenet_distill.yaml
+seed: 42
+amp: true          # use mixed precision
+out_dir: checkpoints/mobilenet_distill
+log_dir: runs/mobilenet_distill
+model:
+  student: mobilenet_v2
+  teacher: xception
+  num_classes: 2
+  pretrained_backbone: true
+  teacher_pretrained: true
+  freeze_backbone: false
+
+data:
+  train_meta: data/processed/train_meta.csv
+  val_meta: data/processed/val_meta.csv
+  num_workers: 4
+
+training:
+  use_teacher: true         # set to false to disable distillation and train with CE
+  teacher_weights: null     # path to a pre-trained teacher checkpoint (recommended)
+  epochs: 10
+  batch_size: 16            # reduce to 8 if you get OOM on GTX1650
+  optimizer:
+    name: adam
+    lr: 1e-4
+    weight_decay: 1e-6
+  scheduler:
+    name: cosine
+  # distillation params
+  T: 4.0
+  alpha: 0.6

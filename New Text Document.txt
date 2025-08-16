@@ -1,0 +1,30 @@
+from torch.utils.data import DataLoader
+from src.dataset import DeepfakeDataset
+
+train_ds = DeepfakeDataset("data/processed/train_meta.csv")
+val_ds = DeepfakeDataset("data/processed/val_meta.csv")
+train_loader = DataLoader(train_ds, batch_size=16, shuffle=True, num_workers=4, pin_memory=True)
+val_loader = DataLoader(val_ds, batch_size=16, shuffle=False, num_workers=4, pin_memory=True)
+
+
+----------------Steps-----------------------------------
+
+Environment & repo scaffold (this message).
+
+Data pipeline: download small samples, face detection, crop & align, dataset format.
+
+Model: MobileNetV2 (student) + optional teacher (Xception) — code and training loop.
+
+Training: transfer learning recipe, augmentations, loss, scheduler, logging.
+
+Evaluation: metrics, ROC/AUC, per-manipulation analysis, test scripts.
+
+Compression: pruning & knowledge distillation code.
+
+Quantization: post-training and QAT scripts.
+
+Export & runtime: ONNX export, ONNX Runtime/TensorRT instructions, sample inference script.
+
+Real-time demo: webcam/app demo (async pipeline: detect → infer → aggregate).
+
+Extras: CI hints, Dockerfile, Colab notebook version, and guidance to scale to DFDC/FF++.
