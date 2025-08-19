@@ -1,0 +1,21 @@
+*** commands are run in bash  (terminal) ***
+1. Build:
+docker build -f docker/Dockerfile.onnxruntime_gpu -t deepfake:onnxruntime -t yourrepo/deepfake:onnxruntime .
+
+
+2. Run (GPU, webcam demo, with display)
+- If you want to display GUI windows from the container to host X (for webcam display), allow local docker X access on host:
+# on host (unsafe for shared machines; revoke later with `xhost -`):
+xhost +local:docker
+
+- Start container with GPU and device access:
+docker run --gpus all --rm -it \
+  --device /dev/video0:/dev/video0 \
+  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v $(pwd):/workspace \
+  deepfake:onnxruntime \
+  demo /workspace/checkpoints/onnx/mobilenet_v2.onnx
+
+- If you don't need GUI (headless), skip DISPLAY and X mounts; just map files and run inference scripts:
+docker run --gpus all --rm -it -v $(pwd):/workspace deepfake:onnxruntime \
+  python src/infer_onnx.py --onnx /workspace/checkpoints/onnx/mobilenet_v2.onnx --img /workspace/test.jpg --use_cuda

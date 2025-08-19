@@ -1,0 +1,50 @@
+# docker/Dockerfile.onnxruntime_gpu
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    TZ=Etc/UTC
+
+# basic deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 python3.10-dev python3-pip python3-venv \
+    build-essential git wget ca-certificates ffmpeg libsm6 libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# make python3 -> python
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 \
+ && python -m pip install --upgrade pip setuptools wheel
+
+WORKDIR /workspace
+
+# install pip packages (choose versions to match your CUDA)
+# - torch + cu118 from PyTorch index
+# - onnxruntime-gpu (use pip wheel; this installs GPU execution provider)
+# - other runtime deps
+RUN python -m pip install --no-cache-dir \
+    "torch>=2.0.0" --index-url https://download.pytorch.org/whl/cu118 \
+    torchvision --index-url https://download.pytorch.org/whl/cu118 \
+    onnxruntime-gpu \
+    onnx \
+    onnx-simplifier \
+    opencv-python-headless \
+    facenet-pytorch \
+    pillow \
+    numpy \
+    pandas \
+    tqdm \
+    albumentations \
+    scikit-learn
+
+# copy project code
+COPY . /workspace
+WORKDIR /workspace
+
+# make entrypoint executable
+COPY docker/entrypoint.sh /workspace/entrypoint.sh
+RUN chmod +x /workspace/entrypoint.sh
+
+ENV PATH="/workspace:${PATH}"
+
+# default command (start a bash shell). Use entrypoint to run demos.
+CMD ["/bin/bash"]

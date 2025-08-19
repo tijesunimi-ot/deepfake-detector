@@ -292,4 +292,17 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default="configs/mobilenet_distill.yaml", help="YAML config file")
     args = parser.parse_args()
     cfg = load_cfg(args.config)
+
+    # ---------------------------
+    # Example: matching layers for pruning/distillation
+    # ---------------------------
+    if cfg.get("debug_match_layers", False):  # enable in YAML if you want to see mappings
+        from src.models import match_layers, get_model
+        teacher = get_model(cfg['model']['teacher'], num_classes=2, pretrained=True)
+        student = get_model(cfg['model']['student'], num_classes=2, pretrained=False)
+        matches = match_layers(teacher, student)
+        print("Matched teacher->student layers:")
+        for t, s in matches.items():
+            print(f"  {t} -> {s}")
+
     main(cfg)
