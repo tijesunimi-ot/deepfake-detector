@@ -14,7 +14,7 @@ model:
 data:
   train_meta: data/processed/train_meta.csv
   val_meta: data/processed/val_meta.csv
-  num_workers: 4
+  num_workers: 2
 
 training:
   use_teacher: true         # set to false to disable distillation and train with CE

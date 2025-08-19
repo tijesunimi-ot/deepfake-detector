@@ -84,7 +84,7 @@ def train_one_epoch(epoch, model, teacher, loader, optimizer, criterion, device,
         labels = labels.to(device, non_blocking=True)
 
         optimizer.zero_grad()
-        with amp.autocast(enabled=cfg['amp']):
+        with amp.autocast(device_type='cuda', enabled=cfg['amp']):
             student_logits = model(imgs)
             if teacher is not None:
                 with torch.no_grad():
