@@ -73,3 +73,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     split_by_video(args.meta_csv, args.out_root, args.val_size, args.test_size)
     print("Dataset split completed successfully.")
+
+# command to run: python src/split_dataset.py --meta_csv data/processed/metadata.csv --out_root data/processed --val_size 0.1 --test_size 0.1

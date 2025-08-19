@@ -9,7 +9,7 @@ import numpy as np
 
 class DeepfakeDataset(Dataset):
     def __init__(self, meta_csv, transforms=None):
-        self.df = pd.read_csv(meta_csv)
+        self.df = pd.read_csv(meta_csv, dtype={'video': str}, low_memory=False)
         self.transforms = transforms
         if self.transforms is None:
             self.transforms = A.Compose([

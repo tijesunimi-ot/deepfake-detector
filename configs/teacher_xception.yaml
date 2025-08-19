@@ -1,0 +1,31 @@
+# teacher config (minimal)
+seed: 42
+amp: true
+out_dir: checkpoints/teacher_xception
+log_dir: runs/teacher_xception
+model:
+  student: xception
+  num_classes: 2
+  pretrained_backbone: true
+  freeze_backbone: false
+
+data:
+  train_meta: data/processed/train_meta.csv
+  val_meta: data/processed/val_meta.csv
+  num_workers: 4
+
+resume: checkpoints/teacher_xception/checkpoint_epoch0.pth.tar
+
+training:
+  use_teacher: false
+  epochs: 15
+  batch_size: 16
+  optimizer:
+    name: adam
+    lr: 0.0001
+    weight_decay: 0.000001
+  scheduler:
+    name: cosine
+
+# command to run (fresh) training: python -m src.train --config configs/teacher_xception.yaml
+# command to resume training: python -m src.train --config configs/teacher_xception.yaml --resume checkpoints/teacher_xception/checkpoint_epoch0.pth.tar

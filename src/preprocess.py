@@ -234,3 +234,5 @@ if __name__ == "__main__":
     parser.add_argument("--cleanup_frames", action="store_true", help="If set, delete the extracted frames/ directory for a video after finalizing crops (saves disk space).")
     args = parser.parse_args()
     process_ffpp(args.raw_root, args.out_root, frames_step=args.frames_step, crop_size=args.crop_size, min_face_size=args.min_face_size, min_crops=args.min_crops, cleanup_frames=args.cleanup_frames)
+
+# command to run: python src/preprocess.py --raw_root data/raw/ffpp --out_root data/processed --frames_step 3 --crop_size 160 --min_crops 5 --cleanup_frames

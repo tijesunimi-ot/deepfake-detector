@@ -3,6 +3,8 @@ import os
 import time
 import argparse
 import yaml
+import torchvision
+import matplotlib.pyplot as plt
 from pathlib import Path
 from tqdm import tqdm
 
@@ -10,8 +12,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.cuda.amp import GradScaler, autocast
-from sklearn.metrics import accuracy_score, roc_auc_score
+from torch import amp
+from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import ConfusionMatrixDisplay
+
 
 # project modules
 from src.dataset import DeepfakeDataset
@@ -80,7 +84,7 @@ def train_one_epoch(epoch, model, teacher, loader, optimizer, criterion, device,
         labels = labels.to(device, non_blocking=True)
 
         optimizer.zero_grad()
-        with autocast(enabled=cfg['amp']):
+        with amp.autocast(enabled=cfg['amp']):
             student_logits = model(imgs)
             if teacher is not None:
                 with torch.no_grad():
@@ -115,7 +119,7 @@ def train_one_epoch(epoch, model, teacher, loader, optimizer, criterion, device,
     metrics['loss'] = float(np.mean(losses))
     return metrics
 
-def validate(model, loader, device, cfg):
+def validate(model, loader, device, cfg, return_preds=False):
     model.eval()
     losses = []
     all_logits = []
@@ -133,6 +137,8 @@ def validate(model, loader, device, cfg):
     all_labels = np.concatenate(all_labels, axis=0)
     metrics = compute_metrics(all_labels, all_logits)
     metrics['loss'] = float(np.mean(losses))
+    if return_preds:
+        return metrics, all_logits, all_labels
     return metrics
 
 # ---------------------------
@@ -191,7 +197,7 @@ def main(cfg):
         scheduler = None
 
     # Mixed precision
-    scaler = GradScaler(enabled=cfg['amp'])
+    scaler = amp.GradScaler(enabled=cfg['amp'])
 
     # Logging
     writer = None
@@ -215,7 +221,7 @@ def main(cfg):
         train_metrics = train_one_epoch(epoch, student, teacher, train_loader, optimizer,
                                         criterion if criterion is not None else nn.CrossEntropyLoss(),
                                         device, scaler, cfg, writer=writer)
-        val_metrics = validate(student, val_loader, device, cfg)
+        val_metrics, val_labels, val_logits = validate(student, val_loader, device, cfg, return_preds=True)
 
         if scheduler is not None:
             try:
@@ -227,11 +233,32 @@ def main(cfg):
         print(f"Epoch {epoch} train loss {train_metrics['loss']:.4f} acc {train_metrics['acc']:.4f} auc {train_metrics['auc']:.4f}")
         print(f"Epoch {epoch} val   loss {val_metrics['loss']:.4f} acc {val_metrics['acc']:.4f} auc {val_metrics['auc']:.4f}")
         if writer is not None:
+            # scalars
             writer.add_scalar("val/loss", val_metrics['loss'], epoch)
             writer.add_scalar("val/acc", val_metrics['acc'], epoch)
             writer.add_scalar("val/auc", val_metrics['auc'], epoch)
             writer.add_scalar("train/acc", train_metrics['acc'], epoch)
             writer.add_scalar("train/auc", train_metrics['auc'], epoch)
+
+            #confusion matrix
+            preds = (val_metrics['probs'] >= 0.5).astype(int)
+            cm = confusion_matrix(val_labels, preds)
+            fig, ax = plt.subplots(figsize=(4, 4))
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Real", "Fake"])
+            disp.plot(ax=ax, cmap="Blues", values_format="d", colorbar=False)
+            writer.add_figure("val/confusion_matrix", fig, epoch)
+            plt.close(fig)
+
+            # Sample predictions (first 16 from last val batch)
+            sample_imgs = next(iter(val_loader))[0][:16].to(device)
+            with torch.no_grad():
+                sample_logits = student(sample_imgs)
+                sample_preds = sample_logits.argmax(dim=1)
+            
+            grid = torchvision.utils.make_grid(sample_imgs.cpu(), nrow=4, normalize=True, scale_each=True)
+            writer.add_image("val/sample_images", grid, epoch)
+            writer.add_text("val/sample_predictions", str(sample_preds.tolist()), epoch)
+
 
         # checkpoint
         is_best = False

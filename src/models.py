@@ -41,9 +41,20 @@ class ClassifierHead(nn.Module):
         x = self.fc(x)
         return x
 
-def get_mobilenet_v2(num_classes: int = 2, pretrained: bool = True, freeze_backbone: bool = False):
+def get_mobilenet_v2(num_classes: int = 2,
+                     pretrained: bool = True,
+                     input_size: int = 160,
+                     p_drop: float = 0.2,
+                     freeze_backbone: bool = False):
     """
-    Returns a MobileNetV2 with a classifier head for `num_classes`.
+    Return a MobileNetV2 adapted for arbitrary input_size (e.g., 160).
+    Notes:
+    - MobileNetV2 is fully-convolutional so it accepts different spatial sizes
+      (160x160 is supported). Pretrained weights were trained at 224x224; using
+      a smaller input is fine but may slightly change performance.
+    - Ensure your data pipeline resizes crops to `input_size` before feeding the model.
+    - We keep the standard MobileNetV2 last_channel (usually 1280) and replace
+      the classifier head to match num_classes.
     """
     if tv_models is None:
         raise RuntimeError("torchvision is required for MobileNetV2. Install torchvision.")
